@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data; }
+    function role() { return signedIn() ? me().role : ''; }
+    function isAdmin()   { return role() == 'admin'; }
+    function isTeacher() { return role() == 'teacher'; }
+    function isStaff()   { return isAdmin() || isTeacher(); }
+    function isDevice()  { return role() == 'device'; }
+
+    // users/{uid}: profile + role (the first admin is created manually in the console)
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow create: if isAdmin() || (isTeacher() && request.resource.data.role == 'student');
+      allow update, delete: if isAdmin();
+    }
+
+    match /classes/{classId} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isTeacher() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['activeSessionId','activeSubjectId','activeSubjectName','activeDate']));
+    }
+
+    match /subjects/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /students/{id} {
+      allow read: if isStaff() || (signedIn() && id == request.auth.uid);
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // Uniqueness guards: created once, never updated. A second registration with the
+    // same RFID UID or roll number fails, so the whole batch fails atomically.
+    match /rfidIndex/{uid} {
+      allow read: if isStaff() || isDevice();
+      allow create: if isStaff();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+    match /rollIndex/{key} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /sessions/{id} {
+      allow read: if isStaff() || (signedIn() && resource.data.classId == me().classId);
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /attendance/{attId} {
+      allow read: if isStaff() || (signedIn() && resource.data.studentId == request.auth.uid);
+      allow create: if isStaff() || (isDevice()
+        && attId == request.resource.data.sessionId + '_' + request.resource.data.studentId
+        && request.resource.data.status == 'present'
+        && get(/databases/$(db)/documents/classes/$(request.resource.data.classId)).data.activeSessionId
+             == request.resource.data.sessionId);
+      allow update: if false;
+      allow delete: if isStaff();
+    }
+
+    match /devices/{id} {
+      allow read: if isStaff();
+      allow write: if isDevice() || isAdmin();
+    }
+  }
+}

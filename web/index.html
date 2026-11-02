@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>sbes.erp – Attendance ERP Portal</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>sbes.erp</h1>
+    <p>Shahbabu Educational Society – Attendance ERP Portal</p>
+  </div>
+  <div id="who"></div>
+</header>
+<main id="app"><p class="muted">Loading…</p></main>
+<footer>Developed by Abdul Wahab</footer>
+<script type="module" src="app.js"></script>
+<script>
+setTimeout(function(){
+  var a=document.getElementById("app");
+  if(a && a.textContent.trim()==="Loading…"){
+    var f=location.protocol==="file:";
+    a.innerHTML='<div class="card"><h2>App could not start</h2><p>'+(f
+      ?'You opened this file directly (file://). Browsers block it. Run <code>firebase deploy --only hosting</code> and open the https://&lt;project&gt;.web.app link, or run <code>npx serve web</code> and open http://localhost:3000.'
+      :'Check web/firebase-config.js has your real Firebase keys, and that you have internet access. Press F12 → Console to see the error.')+'</p></div>';
+  }
+},4000);
+</script>
+</body>
+</html>

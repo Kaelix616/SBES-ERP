@@ -1,0 +1,8 @@
+{
+  "name": "sbes-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shahbabu Educational Society – Attendance ERP Portal. Developed by Abdul Wahab",
+  "dependencies": { "@capacitor/android": "^6.0.0", "@capacitor/core": "^6.0.0" },
+  "devDependencies": { "@capacitor/cli": "^6.0.0" }
+}
